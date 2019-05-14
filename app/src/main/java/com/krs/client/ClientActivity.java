@@ -1,6 +1,5 @@
 package com.krs.client;
 
-import android.graphics.Color;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,13 +11,13 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -38,7 +37,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
     private LinearLayout msgList;
     private Handler handler;
     private int clientTextColor;
-    private EditText edMessage;
+    private EditText edMsgSend, edMsgReceive;
     private String TAG = ClientActivity.class.getSimpleName();
 
     @Override
@@ -54,18 +53,22 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             e.printStackTrace();
         }
 
-
-        setTitle("Client");
+        setTitle("Superb Instruments");
         clientTextColor = ContextCompat.getColor(this, R.color.green);
         handler = new Handler();
         msgList = findViewById(R.id.msgList);
-        edMessage = findViewById(R.id.edMessage);
+        edMsgSend = findViewById(R.id.edMsgSend);
+        edMsgReceive = findViewById(R.id.edMsgReceive);
     }
 
     public TextView textView(String message, int color) {
         if (null == message || message.trim().isEmpty()) {
             message = "<Empty Message>";
         }
+        if (!message.contains("raju") && !message.contains("Connect")) {
+            edMsgReceive.setText(message);
+        }
+
         TextView tv = new TextView(this);
         tv.setTextColor(color);
         tv.setText(message + " [" + getTime() + "]");
@@ -97,14 +100,39 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
         }
 
         if (view.getId() == R.id.send_data) {
-            String clientMessage = edMessage.getText().toString().trim();
-            //   clientMessage="kunjan,10";
-            showMessage(clientMessage, Color.BLUE);
+            String clientMessage = edMsgSend.getText().toString().trim();
+            clientMessage = "data,mac=raju:weight=" + clientMessage;
+            //showMessage(clientMessage, Color.BLUE);
+            Toast.makeText(this, "" + clientMessage, Toast.LENGTH_SHORT).show();
             if (null != clientThread) {
                 clientThread.sendMessage(clientMessage);
-                edMessage.setText("data,mac=raju:weight=123");
-
+                //  edMsgSend.setText("data,mac=raju:weight=123");
             }
+        }
+        if (view.getId() == R.id.listen_data) {
+            String clientMessage = "listen,mac=raju";
+            //   clientMessage="kunjan,10";
+            //showMessage(clientMessage, Color.BLUE);
+            if (null != clientThread) {
+                clientThread.sendMessage(clientMessage);
+                // edMsgSend.setText("data,mac=raju:weight=123");
+            }
+        }
+
+
+    }
+
+    String getTime() {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+        return sdf.format(new Date());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (null != clientThread) {
+            clientThread.sendMessage("Disconnect");
+            clientThread = null;
         }
     }
 
@@ -125,47 +153,15 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                 byte[] buffer = new byte[1024];
                 int read;
                 String message = null;
-                ObjectInputStream ois = null;
-
-               /* ois = new ObjectInputStream(socket.getInputStream());
-                String message = (String) ois.readObject();
-                System.out.println("Message: " + message);
-               // ois.close();
-                Thread.sleep(100);*/
 
                 while ((read = is.read(buffer)) != -1) {
                     message = new String(buffer, 0, read);
                     System.out.print(message);
                     System.out.flush();
                     Log.e(TAG, "message from server: " + message);
-                    showMessage("Server: " + message, clientTextColor);
+                    showMessage(message, clientTextColor);
                 }
-                ;
 
-               /* while (!Thread.currentThread().isInterrupted()) {
-                    Log.e(TAG,"client is listening...");
-
-                    *//*this.dis = new DataInputStream(socket.getInputStream());
-                    String message=this.dis.readLine();
-                    Log.e(TAG,"message from server: "+message);*//*
-
-                 *//*int bytesExpected = is.available(); //it is waiting here
-                    byte[] buffer1 = new byte[bytesExpected];
-                    int readCount = is.read(buffer1);
-                    Log.e(TAG,"message from server: readCount "+readCount);*//*
-
-                   // this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                   // this.input.ready();
-                   // message = input.readLine();
-                    //Log.e(TAG,"message from server2: "+message);
-                    if (null == message || "Disconnect".contentEquals(message)) {
-                        Thread.interrupted();
-                        message = "Server Disconnected.";
-                        showMessage(message, Color.RED);
-                        break;
-                    }
-                    showMessage("Server: " + message, clientTextColor);
-                }*/
 
             } catch (UnknownHostException e1) {
                 e1.printStackTrace();
@@ -182,35 +178,19 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                 public void run() {
                     try {
                         if (null != socket) {
-                            PrintWriter out = new PrintWriter(new BufferedWriter(
-                                    new OutputStreamWriter(socket.getOutputStream())),
-                                    true);
+                            PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
                             /*PrintWriter out = new PrintWriter(socket.getOutputStream());
                             out.println();
                             out.flush();*/
-                            Log.e(TAG,"sendMessage: "+message);
+                            Log.e(TAG, "sendMessage: " + message);
                             out.println(message);
                         }
                     } catch (Exception e) {
-                        Log.e(TAG,"Exception: "+e.getMessage());
+                        Log.e(TAG, "Exception: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }).start();
-        }
-    }
-
-    String getTime() {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-        return sdf.format(new Date());
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (null != clientThread) {
-            clientThread.sendMessage("Disconnect");
-            clientThread = null;
         }
     }
 }
