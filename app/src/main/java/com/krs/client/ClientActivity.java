@@ -29,7 +29,7 @@ import java.util.Date;
 
 public class ClientActivity extends AppCompatActivity implements View.OnClickListener {
 
-    public static final int SERVERPORT = 8080;
+    public static final int SERVERPORT = 8090;
 
     public static String SERVER_IP = "13.233.28.141";
     private ClientThread clientThread;
