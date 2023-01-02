@@ -1,18 +1,15 @@
-package com.krs.client;
+package com.kerwin.myapplication;
 
+import android.app.Activity;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -27,22 +24,26 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
-public class ClientActivity extends AppCompatActivity implements View.OnClickListener {
+public class ClientActivity extends Activity implements View.OnClickListener {
 
-    public static final int SERVERPORT = 8090;
-
-    public static String SERVER_IP = "13.233.28.141";
+    public static final int SERVERPORT = 3333;
+    public static String SERVER_IP = "192.168.4.1"; // //192.168.1.104
+    //public static final int SERVERPORT = 8090;
+    //public static String SERVER_IP = "13.233.28.141";
     private ClientThread clientThread;
-    private Thread thread;
     private LinearLayout msgList;
     private Handler handler;
     private int clientTextColor;
-    private EditText edMsgSend, edMsgReceive;
-    private String TAG = ClientActivity.class.getSimpleName();
+
+    private EditText edMsgSend,edtMsgReceive;
+    private TextView txtConnect,txtSwitchid1,txtSwitch1,txtUnits1,txtKw1,txtAmp1,txtSwitchid2,txtSwitch2,txtUnits2,txtKw2,txtAmp2;
+    private final String TAG = ClientActivity.class.getSimpleName();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_client);
         try {
             WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
@@ -53,21 +54,54 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             e.printStackTrace();
         }
 
-        setTitle("Superb Instruments");
-        clientTextColor = ContextCompat.getColor(this, R.color.green);
+        setTitle("ESP DEMO");
+        clientTextColor = getResources().getColor(R.color.green);
         handler = new Handler();
-        msgList = findViewById(R.id.msgList);
-        edMsgSend = findViewById(R.id.edMsgSend);
-        edMsgReceive = findViewById(R.id.edMsgReceive);
+        msgList = (LinearLayout) findViewById(R.id.msgList);
+        edMsgSend = (EditText) findViewById(R.id.edMsgSend);
+        edtMsgReceive = (EditText) findViewById(R.id.edtMsgReceive);
+
+        txtConnect= (TextView) findViewById(R.id.txtConnect);
+        txtSwitchid1= (TextView) findViewById(R.id.txtSwitchid1);
+        txtSwitch1 = (TextView) findViewById(R.id.txtSwitch1);
+        txtUnits1 = (TextView) findViewById(R.id.txtUnits1);
+        txtKw1 = (TextView) findViewById(R.id.txtKw1);
+        txtAmp1 = (TextView) findViewById(R.id.txtAmp1);
+
+        txtSwitchid2= (TextView) findViewById(R.id.txtSwitchid2);
+        txtSwitch2 = (TextView) findViewById(R.id.txtSwitch2);
+        txtUnits2 = (TextView) findViewById(R.id.txtUnits2);
+        txtKw2 = (TextView) findViewById(R.id.txtKw2);
+        txtAmp2 = (TextView) findViewById(R.id.txtAmp2);
+
     }
 
-    public TextView textView(String message, int color) {
+
+    private TextView textView(String message, int color) {
         if (null == message || message.trim().isEmpty()) {
             message = "<Empty Message>";
         }
-        if (!message.contains("raju") && !message.contains("Connect")) {
-            edMsgReceive.setText(message);
-        }
+      //  if (!message.contains("raju") && !message.contains("Connect")) {
+            edtMsgReceive.setText(message);
+
+            // 1 1 0 0 0 0 0 0 4 15 2 0 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0
+            String msg[]= message.split(" ");
+            if(msg.length>20){
+                txtConnect.setText(msg[0]);
+                txtSwitchid1.setText(msg[1]);
+                txtUnits1.setText(msg[2]+""+msg[3]+" Units");
+                txtKw1.setText(msg[4]+""+msg[5]+" Watts");
+                txtAmp1.setText(msg[6]+""+msg[7]+" Amp");
+                txtSwitch1.setText(Integer.toBinaryString(Integer.parseInt(msg[9])));
+
+                txtSwitchid2.setText(msg[10]);
+                txtUnits2.setText(msg[11]+""+msg[12]+" Units");
+                txtKw2.setText(msg[13]+""+msg[14]+" Watts");
+                txtAmp2.setText(msg[15]+""+msg[16]+" Amp");
+                txtSwitch2.setText(Integer.toBinaryString(Integer.parseInt(msg[18])));
+            }
+
+       // }
 
         TextView tv = new TextView(this);
         tv.setTextColor(color);
@@ -75,6 +109,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
         tv.setTextSize(20);
         tv.setPadding(0, 5, 0, 0);
         return tv;
+
     }
 
     public void showMessage(final String message, final int color) {
@@ -86,6 +121,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
         });
     }
 
+
     @Override
     public void onClick(View view) {
 
@@ -93,31 +129,33 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
             msgList.removeAllViews();
             showMessage("Connecting to Server...", clientTextColor);
             clientThread = new ClientThread();
-            thread = new Thread(clientThread);
+            Thread thread = new Thread(clientThread);
             thread.start();
-            showMessage("Connected to Server...", clientTextColor);
+
             return;
         }
 
         if (view.getId() == R.id.send_data) {
             String clientMessage = edMsgSend.getText().toString().trim();
-            clientMessage = "data,mac=raju:weight=" + clientMessage;
+            //clientMessage = "data,mac=raju:weight=" + clientMessage;
+            // clientMessage = "331";
             //showMessage(clientMessage, Color.BLUE);
-            Toast.makeText(this, "" + clientMessage, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "" + clientMessage, Toast.LENGTH_SHORT).show();
             if (null != clientThread) {
                 clientThread.sendMessage(clientMessage);
                 //  edMsgSend.setText("data,mac=raju:weight=123");
             }
         }
-        if (view.getId() == R.id.listen_data) {
-            String clientMessage = "listen,mac=raju";
+        /*if (view.getId() == R.id.listen_data) {
+            //String clientMessage = "listen,mac=raju"
+          //  String clientMessage = "331";
             //   clientMessage="kunjan,10";
             //showMessage(clientMessage, Color.BLUE);
             if (null != clientThread) {
                 clientThread.sendMessage(clientMessage);
                 // edMsgSend.setText("data,mac=raju:weight=123");
             }
-        }
+        }*/
 
 
     }
@@ -149,7 +187,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                 Log.e(TAG, "server ip: " + SERVER_IP);
                 InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
                 socket = new Socket(serverAddr, SERVERPORT);
-                InputStream is = socket.getInputStream();
+                InputStream is = socket.getInputStream();               // SOCKET READ
                 byte[] buffer = new byte[1024];
                 int read;
                 String message = null;
@@ -170,6 +208,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                 e1.printStackTrace();
                 Log.e(TAG, "IOException:");
             }
+             showMessage("Connected to Server...", clientTextColor);
         }
 
         void sendMessage(final String message) {
@@ -178,6 +217,7 @@ public class ClientActivity extends AppCompatActivity implements View.OnClickLis
                 public void run() {
                     try {
                         if (null != socket) {
+//  SOCKET WRITE
                             PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
                             /*PrintWriter out = new PrintWriter(socket.getOutputStream());
                             out.println();
